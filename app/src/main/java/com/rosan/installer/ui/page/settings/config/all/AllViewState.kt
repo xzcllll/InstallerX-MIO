@@ -13,8 +13,8 @@ data class AllViewState(
         val progress: Progress = Progress.Loading,
     ) {
         sealed class Progress {
-            object Loading : Progress()
-            object Loaded : Progress()
+            data object Loading : Progress()
+            data object Loaded : Progress()
         }
     }
 }
