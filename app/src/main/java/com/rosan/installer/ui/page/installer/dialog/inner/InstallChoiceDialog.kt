@@ -20,7 +20,6 @@ import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.ui.page.installer.dialog.*
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun installChoiceDialog(
     installer: InstallerRepo, viewModel: DialogViewModel
@@ -50,8 +49,7 @@ fun installChoiceDialog(
                     Column(
                         modifier = Modifier.align(Alignment.CenterVertically)
                     ) {
-                        val app = item.app
-                        when (app) {
+                        when (val app = item.app) {
                             is AppEntity.BaseEntity -> {
                                 Text(
                                     app.label ?: app.packageName,

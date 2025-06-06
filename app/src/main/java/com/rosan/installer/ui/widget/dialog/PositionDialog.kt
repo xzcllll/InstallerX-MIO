@@ -1,6 +1,9 @@
 package com.rosan.installer.ui.widget.dialog
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,6 +94,15 @@ fun PositionDialog(
                             mutableStateOf(0)
                         }
                         val buttonHeight = (buttonHeightPx / LocalDensity.current.density).dp
+                        val animatedButtonHeight by animateDpAsState(
+                            targetValue = buttonHeight,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessLow
+                            ),
+                            label = "button_height"
+                        )
+                        
                         Box(modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .onSizeChanged {
@@ -113,7 +125,15 @@ fun PositionDialog(
                         }
 
                         Column(
-                            modifier = Modifier.padding(bottom = animateDpAsState(targetValue = buttonHeight).value)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = animatedButtonHeight)
+                                .animateContentSize(
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                )
                         ) {
                             PositionChildWidget(
                                 leftIcon, centerIcon, rightIcon
