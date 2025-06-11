@@ -1,6 +1,7 @@
 package com.rosan.installer
 
 import android.app.Application
+import android.content.Context
 import com.rosan.installer.di.init.appModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -10,6 +11,7 @@ class App : Application() {
     override fun onCreate() {
         CrashHandler.init()
         super.onCreate()
+        instance = this
         startKoin {
             // Koin Android Logger
             androidLogger()
@@ -18,5 +20,14 @@ class App : Application() {
             // use modules
             modules(appModules)
         }
+    }
+
+    // 全局获取Context
+    companion object {
+        private var instance: App? = null
+        val context: Context
+            get() =
+                    instance?.applicationContext
+                            ?: throw IllegalStateException("App not initialized")
     }
 }

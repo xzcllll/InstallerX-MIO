@@ -24,12 +24,12 @@ class PreferredViewModel : ViewModel(), KoinComponent {
     fun dispatch(action: PreferredViewAction) {
         when (action) {
             is PreferredViewAction.Init -> init()
-            is PreferredViewAction.ChangeGlobalAuthorizer -> changeGlobalAuthorizer(action.authorizer)
-            is PreferredViewAction.ChangeGlobalCustomizeAuthorizer -> changeGlobalCustomizeAuthorizer(
-                action.customizeAuthorizer
-            )
-
-            is PreferredViewAction.ChangeGlobalInstallMode -> changeGlobalInstallMode(action.installMode)
+            is PreferredViewAction.ChangeGlobalAuthorizer ->
+                    changeGlobalAuthorizer(action.authorizer)
+            is PreferredViewAction.ChangeGlobalCustomizeAuthorizer ->
+                    changeGlobalCustomizeAuthorizer(action.customizeAuthorizer)
+            is PreferredViewAction.ChangeGlobalInstallMode ->
+                    changeGlobalInstallMode(action.installMode)
         }
     }
 
@@ -41,22 +41,28 @@ class PreferredViewModel : ViewModel(), KoinComponent {
             initialized = true
             val listener = OnSharedPreferenceChangeListener { sharedPreferences, key ->
                 val authorizer =
-                    AuthorizerConverter.revert(sharedPreferences.getString("authorizer", null))
+                        AuthorizerConverter.revert(sharedPreferences.getString("authorizer", null))
                 val customizeAuthorizer =
-                    (if (authorizer == ConfigEntity.Authorizer.Customize) sharedPreferences.getString(
-                        "customize_authorizer", null
-                    ) else null) ?: ""
+                        (if (authorizer == ConfigEntity.Authorizer.Customize)
+                                sharedPreferences.getString("customize_authorizer", null)
+                        else null)
+                                ?: ""
                 val installMode =
-                    InstallModeConverter.revert(sharedPreferences.getString("install_mode", null))
-                state = state.copy(
-                    authorizer = authorizer,
-                    customizeAuthorizer = customizeAuthorizer,
-                    installMode = installMode
-                )
+                        InstallModeConverter.revert(
+                                sharedPreferences.getString("install_mode", null)
+                        )
+                state =
+                        state.copy(
+                                authorizer = authorizer,
+                                customizeAuthorizer = customizeAuthorizer,
+                                installMode = installMode
+                        )
             }
             listener.onSharedPreferenceChanged(appSharedPreferences, null)
             appSharedPreferences.registerOnSharedPreferenceChangeListener(listener)
-            addCloseable { appSharedPreferences.unregisterOnSharedPreferenceChangeListener(listener) }
+            addCloseable {
+                appSharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+            }
         }
     }
 
@@ -69,14 +75,19 @@ class PreferredViewModel : ViewModel(), KoinComponent {
     private fun changeGlobalCustomizeAuthorizer(customizeAuthorizer: String) {
         val key = "customize_authorizer"
         appSharedPreferences.edit(true) {
-            if (state.authorizerCustomize) putString(key, customizeAuthorizer)
-            else remove(key)
+            if (state.authorizerCustomize) putString(key, customizeAuthorizer) else remove(key)
         }
     }
 
     private fun changeGlobalInstallMode(installMode: ConfigEntity.InstallMode) {
         appSharedPreferences.edit(true) {
             putString("install_mode", InstallModeConverter.convert(installMode))
+        }
+    }
+
+    private fun changeGlobalUseAuthorizerLauncher(useAuthorizerLauncher: Boolean) {
+        appSharedPreferences.edit(true) {
+            putBoolean("use_authorizer_launcher", useAuthorizerLauncher)
         }
     }
 }

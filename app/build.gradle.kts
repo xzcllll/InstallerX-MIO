@@ -22,8 +22,8 @@ android {
         namespace = "com.rosan.installer"
         minSdk = 34
         targetSdk = 35
-        versionCode = 26
-        versionName = "1.7"
+        versionCode = 32
+        versionName = "1.8-mio"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -178,4 +178,11 @@ dependencies {
     implementation(libs.iamr0s.androidAppProcess)
 
     implementation(libs.okhttp)
+
+    // The core module that provides APIs to a shell
+    implementation (libs.core)
+    // Optional: APIs for creating root services. Depends on ":core"
+    implementation (libs.service)
+    // Optional: Provides remote file system support
+    implementation (libs.nio)
 }

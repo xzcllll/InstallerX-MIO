@@ -84,6 +84,8 @@
     <string name="config_allow_downgrade_dsp">允许降级安装低版本的安装包（部分系统禁止此方法，请参考核心破解）</string>
     <string name="config_auto_delete">自动删除</string>
     <string name="config_auto_delete_dsp">安装成功后自动删除安装包</string>
+    <string name="config_use_authorizer_launcher">使用授权器打开应用</string>
+    <string name="config_use_authorizer_launcher_dsp">使用授权器打开应用（需要授权器支持）</string>
 
     <string name="config_error_name">名称不得为空</string>
     <string name="config_error_customize_authorizer">自定义授权器不得为空</string>

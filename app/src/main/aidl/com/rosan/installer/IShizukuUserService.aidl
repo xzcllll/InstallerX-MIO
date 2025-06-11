@@ -3,7 +3,7 @@ package com.rosan.installer;
 import com.rosan.installer.IPrivilegedService;
 
 interface IShizukuUserService {
-    void destroy() = 16777114;
+    void destroy();
 
-    IPrivilegedService getPrivilegedService() = 1;
+    IPrivilegedService getPrivilegedService();
 }

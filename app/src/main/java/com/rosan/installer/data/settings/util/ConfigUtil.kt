@@ -31,26 +31,27 @@ class ConfigUtil {
         suspend fun getByPackageName(packageName: String? = null): ConfigEntity {
             var entity = getByPackageNameInner(packageName)
             if (entity.authorizer == ConfigEntity.Authorizer.Global)
-                entity = entity.copy(
-                    authorizer = globalAuthorizer,
-                    customizeAuthorizer = globalCustomizeAuthorizer
-                )
+                    entity =
+                            entity.copy(
+                                    authorizer = globalAuthorizer,
+                                    customizeAuthorizer = globalCustomizeAuthorizer
+                            )
             if (entity.installMode == ConfigEntity.InstallMode.Global)
-                entity = entity.copy(installMode = globalInstallMode)
+                    entity = entity.copy(installMode = globalInstallMode)
             return entity
         }
 
         private suspend fun getByPackageNameInner(packageName: String? = null): ConfigEntity =
-            withContext(Dispatchers.IO) {
-                val repo = get<ConfigRepo>()
-                val app = getAppByPackageName(packageName)
-                var config: ConfigEntity? = null
-                if (app != null) config = repo.find(app.configId)
-                if (config != null) return@withContext config
-                config = repo.all().firstOrNull()
-                if (config != null) return@withContext config
-                return@withContext ConfigEntity.default
-            }
+                withContext(Dispatchers.IO) {
+                    val repo = get<ConfigRepo>()
+                    val app = getAppByPackageName(packageName)
+                    var config: ConfigEntity? = null
+                    if (app != null) config = repo.find(app.configId)
+                    if (config != null) return@withContext config
+                    config = repo.all().firstOrNull()
+                    if (config != null) return@withContext config
+                    return@withContext ConfigEntity.default
+                }
 
         private fun getAppByPackageName(packageName: String? = null): AppEntity? {
             val repo = get<AppRepo>()

@@ -58,7 +58,7 @@ fun MainPage(navController: NavController) {
             icon = Icons.TwoTone.SettingsSuggest,
             label = stringResource(R.string.preferred)
         ) {
-            PreferredPage(navController, it)
+            PreferredPage(it)
         }
     )
 
