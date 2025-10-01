@@ -1,0 +1,142 @@
+name: Automatic Alpha Pre-Release (Latest Only)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build_and_prerelease:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      # Step 1: Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step 2: Set up the JDK environment
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          cache: gradle
+
+      # Step 3: Grant execute permission for gradlew
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # Step 4: Build both Preview Release APKs
+      - name: Build Preview Release APKs
+        run: ./gradlew assembleOnlinePreviewRelease assembleOfflinePreviewRelease
+
+      # Step 5: Find and Rename Preview APKs
+      - name: Find and Rename Preview APKs
+        id: rename_apks
+        run: |
+          PROJECT_NAME="InstallerX-Revived"
+          VERSION_TAG="${{ steps.version.outputs.VNEW_VERSION }}.${{ steps.commit_sha.outputs.SHORT_SHA }}"
+
+          ONLINE_APK_DIR="app/build/outputs/apk/onlinePreview/release/"
+          OFFLINE_APK_DIR="app/build/outputs/apk/offlinePreview/release/"
+
+          ONLINE_APK_PATH=$(find "$ONLINE_APK_DIR" -maxdepth 1 -type f -name "*.apk" | head -n 1)
+          OFFLINE_APK_PATH=$(find "$OFFLINE_APK_DIR" -maxdepth 1 -type f -name "*.apk" | head -n 1)
+
+          if [ -z "$ONLINE_APK_PATH" ] || [ -z "$OFFLINE_APK_PATH" ]; then
+            echo "ERROR: Could not find both APKs!"
+            ls -R app/build/outputs/apk
+            exit 1
+          fi
+
+          NEW_ONLINE_APK_NAME="${PROJECT_NAME}-online-${VERSION_TAG}.apk"
+          NEW_OFFLINE_APK_NAME="${PROJECT_NAME}-offline-${VERSION_TAG}.apk"
+
+          NEW_ONLINE_APK_PATH="${ONLINE_APK_DIR}${NEW_ONLINE_APK_NAME}"
+          NEW_OFFLINE_APK_PATH="${OFFLINE_APK_DIR}${NEW_OFFLINE_APK_NAME}"
+
+          mv "$ONLINE_APK_PATH" "$NEW_ONLINE_APK_PATH"
+          mv "$OFFLINE_APK_PATH" "$NEW_OFFLINE_APK_PATH"
+
+          echo "online_apk=${NEW_ONLINE_APK_PATH}" >> $GITHUB_OUTPUT
+          echo "offline_apk=${NEW_OFFLINE_APK_PATH}" >> $GITHUB_OUTPUT
+
+      # Step 6: Delete the old alpha release and its corresponding git tag
+      - name: Delete old alpha release and tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_TAG=$(git tag --list "*-alpha-latest" | sort -Vr | head -n 1)
+          if [[ -n "$LATEST_TAG" ]]; then
+            gh release delete "$LATEST_TAG" --yes || echo "No previous alpha release found to delete."
+            git push origin --delete "$LATEST_TAG" || echo "No previous alpha tag found to delete."
+          else
+            echo "No alpha-latest tag to delete."
+          fi
+
+      # Step 7: Automatically generate changelog from commit history
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --list | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -Vr | head -n 1)
+          CURR_TAG="${{ steps.version.outputs.VNEW_VERSION }}-alpha-latest"
+
+          if [ -z "$PREV_TAG" ]; then
+            LOG_RANGE=""
+          else
+            LOG_RANGE="$PREV_TAG..HEAD"
+          fi
+
+          # Get the last 5 commits, excluding merge commits
+          CHANGELOG_LIST=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | head -n 5)
+          CHANGELOG_COUNT=$(git log $LOG_RANGE --pretty=format:"- %s (%an)" | grep -v '^-\s*Merge' | wc -l)
+          
+          CHANGELOG_BODY_OUTPUT=""
+          if [ -z "$CHANGELOG_LIST" ]; then
+            CHANGELOG_BODY_OUTPUT="No changes since the last stable release."
+          else
+            CHANGELOG_BODY_OUTPUT="$CHANGELOG_LIST"
+          fi
+
+          CHANGELOG_LINK_OUTPUT=""
+          if [ "$CHANGELOG_COUNT" -gt 5 ]; then
+            if [ -z "$PREV_TAG" ]; then
+              COMPARE_URL="https://github.com/${{ github.repository }}/commits/main"
+            else
+              COMPARE_URL="https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURR_TAG}"
+            fi
+            # Store the link in its own variable. Note the \n\n for markdown formatting.
+            CHANGELOG_LINK_OUTPUT="\n\n**Full Changelog:** [\`${PREV_TAG}...${CURR_TAG}\`]($COMPARE_URL)"
+          fi
+          
+          {
+            echo "changelog_body<<EOF"
+            echo -e "$CHANGELOG_BODY_OUTPUT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+          {
+            echo "changelog_full_link<<EOF"
+            echo -e "$CHANGELOG_LINK_OUTPUT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+          echo "--- Generated Changelog for Release Body ---"
+          echo -e "${CHANGELOG_BODY_OUTPUT}${CHANGELOG_LINK_OUTPUT}"
+
+      # Step 11: Create Latest Alpha Pre-Release with two APKs
+      - name: Create Latest Alpha Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "InstallerX Revived Alpha (${{ steps.commit_sha.outputs.SHORT_SHA }})"
+          tag_name: "${{ steps.version.outputs.VNEW_VERSION }}-alpha-latest"
+          target_commitish: ${{ github.sha }}
+          body: |
+            ## 这是自动构建的最新 Alpha 测试版。
+            - **这是一个预发布版本，并非为生产环境准备就绪。**
+            - 我们非常鼓励您分享您的看法！
+            
+            ## This is an automatically built latest Al
